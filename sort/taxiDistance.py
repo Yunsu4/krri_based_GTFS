@@ -1,5 +1,3 @@
-import pandas as pd
-from datetime import datetime
 from copy import deepcopy
 
 def sort(processed_trips):    
