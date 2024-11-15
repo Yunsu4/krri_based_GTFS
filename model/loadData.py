@@ -1,8 +1,13 @@
 import pandas as pd
 
 # 전역 변수 설정
-stops_file_path = "only_land_data/stops.txt"
-trips_path = "raw_data/trips.txt"
+stops_file_path = "resources/stops.txt"
+
+
+
+def load_routes():
+    routes_path = "resources/routes.csv"
+    return pd.read_csv(routes_path)
 
 
 
@@ -11,12 +16,12 @@ def load_stop_times(user_time):
     target_time = filter_target_time(user_time)
 
     if isinstance(target_time, str):
-        stop_times_path = f"resource/stop_times_{target_time}h.csv"
+        stop_times_path = f"resources/stop_times/stop_times_{target_time}h.csv"
         return pd.read_csv(stop_times_path)
     else:
         # 두 시간대의 데이터를 읽어서 합치기
-        first_hour_path = f"resource/stop_times_{target_time[0]}h.csv"
-        second_hour_path = f"resource/stop_times_{target_time[1]}h.csv"
+        first_hour_path = f"resources/stop_times/stop_times_{target_time[0]}h.csv"
+        second_hour_path = f"resources/stop_times/stop_times_{target_time[1]}h.csv"
         
         first_hour_data = pd.read_csv(first_hour_path)
         second_hour_data = pd.read_csv(second_hour_path)
@@ -58,6 +63,5 @@ print(test_data.head())"""
 """데이터 파일들을 로드하는 함수"""
 def load_data():
     stops = pd.read_csv(stops_file_path)
-    trips = pd.read_csv(trips_path)
-    return stops, trips
-
+    routes = load_routes()
+    return stops, routes

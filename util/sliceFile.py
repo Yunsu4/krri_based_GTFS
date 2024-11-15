@@ -10,7 +10,7 @@ early_morning_data = stop_times_data[
     ((stop_times_data['arrival_time'] >= '00:00:00') & 
      (stop_times_data['arrival_time'] < '05:00:00'))
 ]
-early_morning_data.to_csv('resource/stop_times_00h.csv', index=False)
+early_morning_data.to_csv('resource/stop_times/stop_times_00h.csv', index=False)
 print(f"새벽 시간대(00:00-05:00) 데이터 저장 완료")
 
 
@@ -27,6 +27,6 @@ for hour in range(5, 24):
     ]
     
     # 파일로 저장
-    output_filename = f'resource/stop_times_{hour:02d}h.csv'
+    output_filename = f'resource/stop_times/stop_times_{hour:02d}h.csv'
     hour_data.to_csv(output_filename, index=False)
     print(f"{hour}시 데이터 저장 완료")
