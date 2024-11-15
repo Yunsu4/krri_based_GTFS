@@ -41,21 +41,10 @@ def calculate_walking_time(distance_km):
 
 
 """2, 4. 현재 시간 이후 도착 예정 버스를 필터링하는 함수"""
-def filter_future_arrivals(stop_times, stops, trips, closest_stops, present_time):
+def filter_future_arrivals(stop_times, stops, closest_stops, present_time):
     filtered_stop_times = stop_times[stop_times['stop_id'].isin(closest_stops['stop_id'])]
     future_departures = filtered_stop_times[filtered_stop_times['arrival_time'] > present_time]
-    future_departures_with_trips = future_departures.merge(trips, on='trip_id', how='inner')
-    return future_departures_with_trips.merge(stops[['stop_id', 'stop_name']], on='stop_id', how='left')
-
-
-
-"""도착지 반경 내의 모든 정류장을 찾는 함수"""
-def find_arrival_stops(stops, user_arrival_lat, user_arrival_lon, arrival_radius):
-    """도착지 반경 내의 모든 정류장을 찾는 함수"""
-    stops['arrival_distance_km'] = stops.apply(
-        lambda row: haversine(user_arrival_lat, user_arrival_lon, row['stop_lat'], row['stop_lon']), axis=1
-    )
-    return stops[stops['arrival_distance_km'] <= arrival_radius]
+    return future_departures.merge(stops[['stop_id', 'stop_name']], on='stop_id', how='left')
 
 
 
@@ -277,3 +266,22 @@ def get_course_of_journey(processed_trips, stop_times, stops):
             journey_stops_by_trip[trip_id] = journey_stops
 
     return journey_stops_by_trip
+
+
+
+''' 13. 노선 이름 조회'''
+def get_trip_name(trip_id, routes):
+    try:
+        # '_Ord' 이전까지의 문자열을 route_id로 사용
+        route_id = trip_id.split('_Ord')[0]  # BR_3100_200000049
+        
+        matching_routes = routes[routes['route_id'] == route_id]
+        
+        if matching_routes.empty:
+            return f"알 수 없는 노선 (ID: {route_id})"
+            
+        return matching_routes['route_short_name'].iloc[0]
+        
+    except Exception as e:
+        return f"노선 정보 조회 실패 (Trip ID: {trip_id})"
+

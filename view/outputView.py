@@ -1,7 +1,7 @@
 import processData
 
 # 출력 로직
-def print_trip_info(processed_trips, sort_type, print_count, journey_stops_by_trip):
+def print_trip_info(processed_trips, sort_type, print_count, journey_stops_by_trip, routes):
     count = 1  # 출력한 개수를 세는 카운터
     
     for trip_id, closest_departure_stop, closest_arrival_stop in processed_trips:
@@ -9,13 +9,13 @@ def print_trip_info(processed_trips, sort_type, print_count, journey_stops_by_tr
             break
             
         if sort_type == "total_journey_time":
-            print_bus_info_total_journey_time(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip)
+            print_bus_info_total_journey_time(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip, routes)
         elif sort_type == "taxi_distance":
-            print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip)
+            print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip, routes)
         elif sort_type == "walking_distance":
-            print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip)
+            print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip, routes)
         else:
-            print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip)
+            print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip, routes)
         count += 1
 
 def print_course_of_journey(journey_stops_by_trip, current_trip_id):
@@ -29,10 +29,11 @@ def print_course_of_journey(journey_stops_by_trip, current_trip_id):
         print("\n" + "="*50)
 
 # n 개의 버스 정보 출력
-def print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip):
+def print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip, routes):
     if str(trip_id).startswith('RR'):
         print(f"\n{count}번째로 빠른 지하철:")
         print(f"trip ID: {trip_id}")
+        print(f"대중교통 이름: {processData.get_trip_name(trip_id, routes)}")
         print("\n현위치에서 출발 역까지 걸어가는데 걸리는 시간: ", round(closest_departure_stop['time_to_stop'].iloc[0]), "분")
         print("\n출발 역 정보:")
         print(closest_departure_stop[['stop_id', 'stop_name', 'stop_lat', 'stop_lon', 
@@ -56,7 +57,7 @@ def print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop,
     else:
         print(f"\n{count}번째로 빠른 버스:")
         print(f"trip ID: {trip_id}")
-
+        print(f"대중교통 이름: {processData.get_trip_name(trip_id, routes)}")
         print("\n현위치에서 출발 정류장까지 걸어가는데 걸리는 시간: ", round(closest_departure_stop['time_to_stop'].iloc[0]), "분")
         print("\n출발 정류장 정보:")
         print(closest_departure_stop[['stop_id', 'stop_name', 'stop_lat', 'stop_lon', 
@@ -78,10 +79,11 @@ def print_bus_info(count, trip_id, closest_departure_stop, closest_arrival_stop,
 
 
 
-def print_bus_info_total_journey_time(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip):
+def print_bus_info_total_journey_time(count, trip_id, closest_departure_stop, closest_arrival_stop, journey_stops_by_trip, routes):
     if str(trip_id).startswith('RR'):
         print(f"\n{count}번째로 빠른 지하철:")
         print(f"trip ID: {trip_id}")
+        print(f"대중교통 이름: {processData.get_trip_name(trip_id, routes)}")
         print("\n총 소요 시간: ", round(closest_departure_stop['total_journey_time'].iloc[0]), "분")
         print("\n현위치에서 출발 역까지 걸어가는데 걸리는 시간: ", round(closest_departure_stop['time_to_stop'].iloc[0]), "분")
         print("\n출발 역 정보:")
@@ -103,6 +105,7 @@ def print_bus_info_total_journey_time(count, trip_id, closest_departure_stop, cl
     else:
         print(f"\n{count}번째로 빠른 버스:")
         print(f"trip ID: {trip_id}")
+        print(f"대중교통 이름: {processData.get_trip_name(trip_id, routes)}")
         print("\n총 소요 시간: ", round(closest_departure_stop['total_journey_time'].iloc[0]), "분")
         print("\n현위치에서 출발 정류장까지 걸어가는데 걸리는 시간: ", round(closest_departure_stop['time_to_stop'].iloc[0]), "분")
         print("\n출발 정류장 정보:")
