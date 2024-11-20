@@ -1,7 +1,14 @@
 import pandas as pd
 import numpy as np
 
-
+def custom_round(number):
+    if isinstance(number, pd.Series):
+        number = number.iloc[0]
+    
+    if number - int(number) >= 0.5:
+        return int(number) + 1
+    else:
+        return int(number)
 
 
 """두 지점 간의 거리를 계산하는 함수"""
@@ -49,7 +56,7 @@ def filter_future_arrivals(stop_times, stops, closest_stops, present_time):
 
 
 """5(6, 7). 출발지와 도착지를 경로로 이어져 있는 버스 노선을 찾는 함수"""
-def find_matching_routes(departure_buses, arrival_buses, stops, present_time):
+def find_matching_routes(departure_buses, arrival_buses, stops, present_time, taxi_first):
     # departure_buses와 arrival_buses의 route_id 비교
     departure_routes = set(departure_buses['trip_id'])
     arrival_routes = set(arrival_buses['trip_id'])
@@ -70,7 +77,7 @@ def find_matching_routes(departure_buses, arrival_buses, stops, present_time):
     
     # 보정 - 출발 정류장의 버스 출발 시간 기준, 노선과 현 시각 매칭
     sorted_trip_times = []
-    for trip_id, departure_rows in sort_trips(trip_times, stops, present_time):
+    for trip_id, departure_rows in sort_trips(trip_times, stops, present_time, taxi_first):
         trip_info = get_valid_trips_with_sort(trip_id, departure_rows, arrival_buses)
         if trip_info:
             departure_rows, arrival_rows = trip_info
@@ -81,7 +88,7 @@ def find_matching_routes(departure_buses, arrival_buses, stops, present_time):
 
 
 """6. 출발 정류장 출발 시간 기준 정렬"""
-def sort_trips(trip_times, stops, present_time):
+def sort_trips(trip_times, stops, present_time, taxi_first):
     for_sort_trip_times = []
     for trip_id, departure_rows in trip_times:
         departure_stop_ids = departure_rows['stop_id'].values
@@ -100,12 +107,12 @@ def sort_trips(trip_times, stops, present_time):
         )
         
         # 도보 시간을 고려한 유효한 출발 정류장 찾기
-        valid_departure_stops = find_matching_departure_stops(closest_departure_stop, present_time)
+        valid_departure_stops = find_matching_departure_stops(closest_departure_stop, present_time, taxi_first)
         
         if valid_departure_stops.empty:
             continue
 
-        valid_departure_time = valid_departure_stops['arrival_time'].iloc[0]
+        valid_departure_time = valid_departure_stops['departure_time'].iloc[0]
 
         for_sort_trip_times.append((valid_departure_time, trip_id, valid_departure_stops))
     
@@ -117,15 +124,18 @@ def sort_trips(trip_times, stops, present_time):
 
         
 """7. 도보 시간을 고려한 유효한 출발 정류장 찾기"""
-def find_matching_departure_stops(departure_rows, present_time):
+def find_matching_departure_stops(departure_rows, present_time, taxi_first):
+
     # 거리 계산에 사용할 컬럼 선택
     distance_col = 'departure_distance_km' if 'departure_distance_km' in departure_rows.columns else 'distance_km'
+
+    if taxi_first:
+        travel_time_to_stop = float(departure_rows[distance_col].iloc[0])    
+    else:
+        travel_time_to_stop = float(departure_rows[distance_col].iloc[0] * 15)
     
-    # Series를 단일 값으로 변환 (첫 번째 행의 값 사용)
-    walking_minutes = float(departure_rows[distance_col].iloc[0] * 15)
-    
-    # 현재 시간에 도보 시간을 더해서 실제 정류장 도착 시간 계산
-    time_to_stop = pd.to_datetime(present_time) + pd.Timedelta(minutes=walking_minutes)
+    # 현재 시간에 도보 or 택시 시간을 더해서 실제 정류장 도착 시간 계산
+    time_to_stop = pd.to_datetime(present_time) + pd.Timedelta(minutes=travel_time_to_stop)
     time_to_stop = time_to_stop.strftime('%H:%M:%S')
 
     # 버스 도착 시간이 정류장 도착 시간보다 늦은 것만 필터링
@@ -147,13 +157,10 @@ def get_valid_trips_with_sort(trip_id, departure_rows, arrival_buses):
 
 """ 8. 도착지와 도착 정류장 사이의 거리가 가장 가까운 도착 정류장 반환,
     도착 정류장 정보 추가, 9. 정류장까지 걸어가는 시간 계산"""
-def process_trips(trip_times, stops, trip_count):
+def process_trips(trip_times, stops, trip_count, taxi_first):
     processed_trips = []
-    count = 0
-    i = 1
-    while count < trip_count and i <= len(trip_times):
-        trip_id, departure_rows, arrival_rows = trip_times[i-1]
-
+    
+    for trip_id, departure_rows, arrival_rows in trip_times[:trip_count]:  # 정렬된 순서 그대로 사용
         # 도착지 정류장 정보 - 도착지와 가장 가까운 정류장 선택
         arrival_stop_ids = arrival_rows['stop_id'].values
         arrival_stops_info = stops[stops['stop_id'].isin(arrival_stop_ids)].copy()
@@ -174,64 +181,55 @@ def process_trips(trip_times, stops, trip_count):
         )
 
         # 거리에 따른 도보 시간 계산    
-        closest_departure_stop.loc[:, 'time_to_stop'] = round(closest_departure_stop['departure_distance_km'] * 15)
-        closest_arrival_stop.loc[:, 'time_to_stop'] = round(closest_arrival_stop['arrival_distance_km'] * 15)
+        closest_departure_stop, closest_arrival_stop = calculate_time_to_stop(closest_departure_stop, closest_arrival_stop, taxi_first)
         
         processed_trips.append((trip_id, closest_departure_stop, closest_arrival_stop))
-        count += 1
-        i += 1
         
     return processed_trips
 
+
+def calculate_time_to_stop(closest_departure_stop, closest_arrival_stop, taxi_first):
+    if taxi_first:
+        closest_departure_stop.loc[:, 'time_to_stop'] = custom_round_for_taxi(closest_departure_stop['departure_distance_km'])
+        closest_arrival_stop.loc[:, 'time_to_stop'] = custom_round(closest_arrival_stop['arrival_distance_km'] * 15)
+    else:
+        closest_departure_stop.loc[:, 'time_to_stop'] = custom_round(closest_departure_stop['departure_distance_km'] * 15)
+        closest_arrival_stop.loc[:, 'time_to_stop'] = custom_round_for_taxi(closest_arrival_stop['arrival_distance_km'])
+
+    return (closest_departure_stop, closest_arrival_stop)
+
+def custom_round_for_taxi(number):
+    if isinstance(number, pd.Series):
+        number = number.iloc[0]
+    
+    if number - int(number) >= 0.4:
+        return int(number) + 1
+    else:
+        return int(number)
 
 
 
 ''' 11. 동일한 경로의 대중교통이 중복 표시되지 않도록 필터링'''
 def remove_duplicate_trips(processed_trips):
     unique_trips = []
+    seen_routes = set()
     
-    for i, current_trip in enumerate(processed_trips):
-        current_trip_id = current_trip[0]
-        current_departure = current_trip[1]
-        current_arrival = current_trip[2]
-        is_duplicate = False
+    for current_trip in processed_trips:  # 정렬된 순서 그대로 순회
+        trip_id = current_trip[0]
+        departure = current_trip[1]
+        arrival = current_trip[2]
         
-        # 이미 추가된 trip들과 비교
-        for existing_trip in unique_trips:
-            existing_trip_id = existing_trip[0] 
-            existing_departure = existing_trip[1]
-            existing_arrival = existing_trip[2]
-            
-            # 1. 기존 로직: trip_id 기본 형식이 같은 경우 체크
-            if current_trip_id[:-3] == existing_trip_id[:-3]:
-                if (current_departure['stop_id'].iloc[0] == existing_departure['stop_id'].iloc[0]):
-                    if (current_arrival['stop_id'].iloc[0] == existing_arrival['stop_id'].iloc[0]):
-                        is_duplicate = True
-                        break
-            
-            # 2. 새로운 로직: 출발/도착 정류장이 같고 소요 시간도 같은 경우 체크
-            elif (current_departure['stop_id'].iloc[0] == existing_departure['stop_id'].iloc[0] and 
-                  current_arrival['stop_id'].iloc[0] == existing_arrival['stop_id'].iloc[0]):
-                
-                # 각각의 소요 시간 계산
-                current_dep_time = current_departure['departure_time'].iloc[0]
-                current_arr_time = current_arrival['departure_time'].iloc[0]
-                current_journey_time = convert_time_to_minutes(current_arr_time) - convert_time_to_minutes(current_dep_time)
-                
-                existing_dep_time = existing_departure['departure_time'].iloc[0]
-                existing_arr_time = existing_arrival['departure_time'].iloc[0]
-                existing_journey_time = convert_time_to_minutes(existing_arr_time) - convert_time_to_minutes(existing_dep_time)
-                
-                # 소요 시간이 같고(1분 이내 차이), 현재 trip의 출발이 더 늦은 경우
-                if (abs(current_journey_time - existing_journey_time) <= 1 and 
-                    convert_time_to_minutes(current_dep_time) > convert_time_to_minutes(existing_dep_time)):
-                    is_duplicate = True
-                    break
+        # 출발지-도착지 쌍을 키로 사용
+        route_key = (
+            departure['stop_id'].iloc[0],
+            arrival['stop_id'].iloc[0]
+        )
         
-        if not is_duplicate:
+        if route_key not in seen_routes:
+            seen_routes.add(route_key)
             unique_trips.append(current_trip)
             
-    return unique_trips
+    return unique_trips  # 정렬된 순서 유지
 
 
 

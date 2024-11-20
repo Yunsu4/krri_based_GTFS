@@ -5,7 +5,16 @@ def convert_time_to_minutes(time_str):
     return (hours * 60) + minutes + (seconds / 60)
 
 
-def sort(processed_trips):
+def sort(processed_trips, taxi_first):
+
+    sorted_trips = add_total_journey_time(processed_trips, taxi_first)
+
+    return sorted(sorted_trips, 
+                 key=lambda x: (round(x[1]['total_journey_time'].iloc[0]), 
+                              convert_time_to_minutes(x[1]['arrival_time'].iloc[0])))
+
+
+def add_total_journey_time(processed_trips, taxi_first):
     sorted_trips = []
     
     for trip_id, closest_departure_stop, closest_arrival_stop in processed_trips:
@@ -13,13 +22,15 @@ def sort(processed_trips):
         arrival_minutes = convert_time_to_minutes(closest_arrival_stop['arrival_time'].iloc[0])
         
         total_time = arrival_minutes - departure_minutes
-        total_time += closest_departure_stop['time_to_stop'].iloc[0]
-        total_time += closest_arrival_stop['time_to_stop'].iloc[0]
+        if taxi_first:
+            total_time += round(closest_departure_stop['departure_distance_km'].iloc[0])
+            total_time += round(closest_arrival_stop['arrival_distance_km'].iloc[0] * 15)
+        else:
+            total_time += round(closest_departure_stop['departure_distance_km'].iloc[0] * 15)
+            total_time += round(closest_arrival_stop['arrival_distance_km'].iloc[0])
         total_time = round(total_time)
         
         closest_departure_stop['total_journey_time'] = total_time
         sorted_trips.append((trip_id, closest_departure_stop, closest_arrival_stop))
     
-    return sorted(sorted_trips, 
-                 key=lambda x: (round(x[1]['total_journey_time'].iloc[0]), 
-                              convert_time_to_minutes(x[1]['arrival_time'].iloc[0])))
+    return sorted_trips
