@@ -37,9 +37,21 @@ def index():
             present_time, user_radius, 
             arrival_radius, sort_type, taxi_first
         )
+
+        result_data = json.loads(result)  # 이미 리스트 형태
+
+        # 리스트와 사용자 좌표를 포함하는 새로운 딕셔너리 생성
+        response_data = {
+            "trips": result_data,  # 기존 결과 리스트
+            "user_coordinates": {
+                "departure_lat": departure_lat,
+                "departure_lon": departure_lon,
+                "arrival_lat": arrival_lat,
+                "arrival_lon": arrival_lon
+            }
+        }
         
-        # JSON 응답 반환
-        return jsonify(json.loads(result))
+        return jsonify(response_data)
     
     return render_template('index.html')
 
