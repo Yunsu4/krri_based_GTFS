@@ -80,7 +80,7 @@ function clearMarkers() {
 }
 
 // 지도에 경로 표시 함수 수정
-function displayTripsOnMap(trips) {
+function displayTripsOnMap(data) {
     clearMarkers(); // 기존 마커와 폴리라인 모두 제거
 
     const heart_markerImage = new kakao.maps.MarkerImage(
@@ -92,26 +92,50 @@ function displayTripsOnMap(trips) {
         'static/images/custom_bus_marker.png',
         new kakao.maps.Size(30, 40)
     );
+
+    const userCoords = data.user_coordinates;
     
-    trips.forEach(trip => {
+    data.trips.forEach(trip => {
+
         // 출발지 마커
+        const userStartMarker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(
+                userCoords.departure_lat,
+                userCoords.departure_lon),
+            image: heart_markerImage,
+            map: map
+        });
+        markers.push(userStartMarker);
+
+        // 도착지 마커
+        const userEndMarker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(
+                userCoords.arrival_lat,
+                userCoords.arrival_lon
+            ),
+            image: heart_markerImage,
+            map: map
+        });
+        markers.push(userEndMarker);
+
+        // 출발 정류장 마커
         const departureMarker = new kakao.maps.Marker({
             position: new kakao.maps.LatLng(
                 trip.departure.stop_info.stop_lat,
                 trip.departure.stop_info.stop_lon
             ),
-            image: heart_markerImage,
+            image: bus_markerImage,
             map: map
         });
         markers.push(departureMarker);
 
-        // 도착지 마커
+        // 도착 정류장 마커
         const arrivalMarker = new kakao.maps.Marker({
             position: new kakao.maps.LatLng(
                 trip.arrival.stop_info.stop_lat,
                 trip.arrival.stop_info.stop_lon
             ),
-            image: heart_markerImage,
+            image: bus_markerImage,
             map: map
         });
         markers.push(arrivalMarker);
@@ -128,6 +152,42 @@ function displayTripsOnMap(trips) {
             });
             markers.push(stopMarker);
         });
+
+
+        // polyline 설정
+
+        // 실제 출발지 -> 출발 정류장 연결선
+        const startConnectionPath = [
+            new kakao.maps.LatLng(userCoords.departure_lat, userCoords.departure_lon),
+            new kakao.maps.LatLng(trip.departure.stop_info.stop_lat, trip.departure.stop_info.stop_lon)
+        ];
+        
+        const startConnection = new kakao.maps.Polyline({
+            path: startConnectionPath,
+            strokeWeight: 3,
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.7,
+            strokeStyle: 'dashed'
+        });
+        startConnection.setMap(map);
+        polylines.push(startConnection);
+
+        // 도착 정류장 -> 실제 도착지 연결선
+        const endConnectionPath = [
+            new kakao.maps.LatLng(trip.arrival.stop_info.stop_lat, trip.arrival.stop_info.stop_lon),
+            new kakao.maps.LatLng(userCoords.arrival_lat, userCoords.arrival_lon)
+        ];
+        
+        const endConnection = new kakao.maps.Polyline({
+            path: endConnectionPath,
+            strokeWeight: 3,
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.7,
+            strokeStyle: 'dashed'
+        });
+        endConnection.setMap(map);
+        polylines.push(endConnection);
+
 
 
         let linePath = [];
@@ -222,12 +282,12 @@ function setupFormHandler() {
 
 // 페이지 로드 시 초기화
 
-function displayTripResults(trips) {
+function displayTripResults(data) {
     const resultDiv = document.querySelector('.result');
     resultDiv.innerHTML = ''; // 기존 결과 초기화
 
     // rank 기준으로 정렬
-    const sortedTrips = trips.sort((a, b) => a.rank - b.rank);
+    const sortedTrips = data.trips.sort((a, b) => a.rank - b.rank);
 
     sortedTrips.forEach((trip) => {
         const tripCard = document.createElement('div');
@@ -277,7 +337,7 @@ function displayTripResults(trips) {
             
             // 지도에 해당 경로만 표시
             clearMarkers(); // 기존 마커와 선 제거
-            displayTripsOnMap([trip]); // 선택된 경로만 표시
+            displayTripsOnMap({trips: [trip], user_coordinates: data.user_coordinates}); // 선택된 경로만 표시
         });
 
         resultDiv.appendChild(tripCard);
