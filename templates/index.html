@@ -166,11 +166,11 @@
                 <input type="time" name="present_time" required>
             </div>
             <div class="form-group">
-                <label>사용자 반경(m):</label>
+                <label>사용자 반경(km):</label>
                 <input type="number" name="user_radius" required>
             </div>
             <div class="form-group">
-                <label>도착지 반경(m):</label>
+                <label>도착지 반경(km):</label>
                 <input type="number" name="arrival_radius" required>
             </div>
             <div class="form-group">
@@ -206,7 +206,7 @@
     </div>
 
     <!-- Kakao 지도 API -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey="></script>
-    <script src="{{ url_for('static', filename='js/test_js.js') }}"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0883d65639dc6ec90128d88233f7682f"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
