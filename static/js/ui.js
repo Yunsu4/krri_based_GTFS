@@ -1,10 +1,80 @@
 import { clearMarkers, displayTripsOnMap } from "./map.js";
+import { fetchTrips } from "./api.js";
+
+let currentData = null;
 
 export function displayTripResults(data) {
+    currentData = data;
+    
+    const sortButtons = document.querySelector('.sort-buttons');
+    
+    if (!data || !data.trips || data.trips.length === 0) {
+        // 검색 결과가 없으면 정렬 버튼 숨김
+        sortButtons.style.display = 'none';
+    } else {
+        // 검색 결과가 있으면 정렬 버튼 표시
+        sortButtons.style.display = 'flex';
+        
+        // 정렬 버튼 초기화 (처음 한 번만)
+        if (!window.sortButtonsInitialized) {
+            initSortButtons();
+            window.sortButtonsInitialized = true;
+            
+            // 처음 검색 시에만 시간순 버튼 활성화
+            document.querySelector('.sort-btn[data-sort="default"]').classList.add('active');
+        }
+    }
+    
+    displaySortedTrips(data);
+}
+
+function initSortButtons() {
+    document.querySelectorAll('.sort-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            // 활성 버튼 스타일 변경
+            document.querySelectorAll('.sort-btn').forEach(btn => 
+                btn.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            // 로딩 표시 시작
+            const loadingDiv = document.querySelector('.loading');
+            const resultDiv = document.querySelector('.result');
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = ''; // 기존 결과 초기화
+            
+            // 현재 폼 데이터 가져오기
+            const taxiFirst = document.querySelector('input[name="taxi_first"]:checked').value === 'true';
+            
+            const formData = {
+                departure_lat: parseFloat(document.querySelector('[name="departure_lat"]').value),
+                departure_lon: parseFloat(document.querySelector('[name="departure_lon"]').value),
+                arrival_lat: parseFloat(document.querySelector('[name="arrival_lat"]').value),
+                arrival_lon: parseFloat(document.querySelector('[name="arrival_lon"]').value),
+                present_time: document.querySelector('[name="present_time"]').value,
+                taxi_first: taxiFirst,
+                user_radius: taxiFirst ? 2 : 1,
+                arrival_radius: taxiFirst ? 1 : 2,
+                sort_type: e.target.dataset.sort
+            };
+
+            try {
+                const data = await fetchTrips(formData);
+                displayTripResults(data);
+            } catch (error) {
+                console.error('Error fetching sorted trips:', error);
+                displayTripResults({ trips: [] });
+            } finally {
+                // 로딩 표시 종료
+                loadingDiv.style.display = 'none';
+            }
+        });
+    });
+}
+
+function displaySortedTrips(data) {
     const resultDiv = document.querySelector('.result');
     resultDiv.innerHTML = '';
 
-    // 데이터가 없거나 trips가 비어있는 경우 처리
     if (!data || !data.trips || data.trips.length === 0) {
         const noResultCard = document.createElement('div');
         noResultCard.className = 'trip-card no-result';
@@ -15,12 +85,15 @@ export function displayTripResults(data) {
         return;
     }
 
-    // rank 기준으로 정렬
-    const sortedTrips = data.trips.sort((a, b) => a.rank - b.rank);
-
-    sortedTrips.forEach((trip) => {
+    data.trips.forEach((trip) => {
         const tripCard = document.createElement('div');
         tripCard.className = 'trip-card';
+        
+        // intermediate_stops가 있는지 확인하고 없으면 빈 배열 사용
+        const intermediateStopsHtml = trip.intermediate_stops ? 
+            trip.intermediate_stops.map(stop => `
+                <div>${trip.transport_type === '버스' ? '정류장' : '정차역'}: ${stop.stop_name}</div>
+            `).join('') : '';
         
         tripCard.innerHTML = `
             <h3>경로 ${trip.rank} (총 소요시간: ${trip.total_journey_time}분)</h3>
@@ -33,9 +106,7 @@ export function displayTripResults(data) {
 
                 <div class="stop-info">
                     <div class="bus-info">${trip.transport_type} ${trip.route_name}</div>
-                    ${trip.intermediate_stops.map(stop => `
-                        <div>${trip.transport_type === '버스' ? '정류장' : '정차역'}: ${stop.stop_name}</div>
-                    `).join('')}
+                    ${intermediateStopsHtml}
                 </div>
 
                 <div class="stop-info">
