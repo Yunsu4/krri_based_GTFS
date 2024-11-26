@@ -13,6 +13,16 @@ export function initMap() {
     map = new kakao.maps.Map(container, options);
 }
 
+
+export function setMapForUserLocation(lat, lon) {
+    const container = document.getElementById('map');
+    const options = {
+        center: new kakao.maps.LatLng(lat, lon),
+        level: 3
+    };
+    map = new kakao.maps.Map(container, options);
+}
+
 // 마커와 폴리라인 초기화
 export function clearMarkers() {
     markers.forEach(marker => marker.setMap(null));
