@@ -1,49 +1,51 @@
-<!DOCTYPE html>
-<html>
 <head>
     <title>Trip Search</title>
     <meta charset="utf-8"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Kakao Maps API -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0883d65639dc6ec90128d88233f7682f&libraries=services"></script>
+    <!-- 검색 기능 -->
+    <script type="module" src="{{ url_for('static', filename='js/search.js') }}"></script>
+    <!-- 기존 스크립트들 -->
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/map.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/api.js') }}"></script>
 </head>
 <body>
-    <!-- 왼쪽 사이드바 -->
     <div class="sidebar">
         <h1 style="font-size: 1.5em; margin-bottom: 20px;">경로 검색</h1>
         <form id="searchForm">
-            <div class="form-group">
-                <label>출발지 위도:</label>
-                <input type="number" step="any" name="departure_lat" required>
+            <!-- 출발지 검색 -->
+            <div class="search-box">
+                <input type="text" id="departure-keyword" placeholder="출발지">
+                <button type="button" onclick="searchDeparture()">검색</button>
             </div>
-            <div class="form-group">
-                <label>출발지 경도:</label>
-                <input type="number" step="any" name="departure_lon" required>
+            <div id="departure-result" class="place-list"></div>
+            <input type="hidden" name="departure_lat">
+            <input type="hidden" name="departure_lon">
+            
+            <!-- 도착지 검색 -->
+            <div class="search-box">
+                <input type="text" id="arrival-keyword" placeholder="도착지">
+                <button type="button" onclick="searchArrival()">검색</button>
             </div>
-            <div class="form-group">
-                <label>도착지 위도:</label>
-                <input type="number" step="any" name="arrival_lat" required>
-            </div>
-            <div class="form-group">
-                <label>도착지 경도:</label>
-                <input type="number" step="any" name="arrival_lon" required>
-            </div>
+            <div id="arrival-result" class="place-list"></div>
+            <input type="hidden" name="arrival_lat">
+            <input type="hidden" name="arrival_lon">
+
             <div class="form-group">
                 <label>시간:</label>
                 <input type="time" name="present_time" required>
             </div>
-            <div class="form-group">
-                <label>택시 이용 순서:</label>
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input type="radio" name="taxi_first" value="true" checked>
-                        택시 먼저 타기
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="taxi_first" value="false">
-                        택시 나중에 타기
-                    </label>
-                </div>
+            
+            <div class="taxi-order-buttons">
+                <button type="button" class="taxi-btn active" data-value="true">택시 먼저 타기</button>
+                <button type="button" class="taxi-btn" data-value="false">택시 나중에 타기</button>
             </div>
-            <button type="submit">검색</button>
+            <input type="hidden" name="taxi_first" value="true">
+            
+            <button type="submit" class="search-submit">경로 검색</button>
             <div class="loading" style="display: none;">경로 탐색 중...</div>
         </form>
         <div class="sort-buttons" style="display: none;">
@@ -54,14 +56,9 @@
         </div>
         <div class="result"></div>
     </div>
-
-    <!-- 오른쪽 지도 영역 -->
+    
+    <!-- 지도를 표시할 div 추가 -->
     <div class="map-container">
         <div id="map"></div>
     </div>
-
-    <!-- Kakao 지도 API -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0883d65639dc6ec90128d88233f7682f"></script>
-    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
-</html>
