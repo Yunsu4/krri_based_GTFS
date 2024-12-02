@@ -43,7 +43,7 @@ body {
 
 /* 폼 그룹 및 버튼 스타일 */
 .form-group {
-    margin-bottom: 15px;
+    margin-top: 25px;
 }
 
 label {
@@ -147,6 +147,7 @@ button {
     color: #333;
     cursor: pointer;
     font-size: 0.9em;
+    border-radius: 8px;
 }
 
 .sort-btn.active {
@@ -179,4 +180,134 @@ button {
     0% { opacity: 0.6; }
     50% { opacity: 1; }
     100% { opacity: 0.6; }
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.search-box input {
+    flex: 1;
+    height: 38px;
+    padding: 0 10px;
+    margin-bottom: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.search-box input::placeholder {
+    color: #999;
+}
+
+.search-box button {
+    width: auto;
+    height: 38px;
+    padding: 0 20px;
+    line-height: 38px;
+    margin: 0;
+}
+
+.place-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.place-list .item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.place-list .item:hover {
+    background-color: #f5f5f5;
+}
+
+.place-list .item h5 {
+    margin: 0;
+    font-size: 1em;
+    color: #333;
+}
+
+.place-list .item span {
+    display: block;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.taxi-order-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 25px 0 30px 0;
+}
+
+.taxi-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.taxi-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.taxi-btn.active {
+    background-color: #90EE90;
+    color: #333;
+    border-color: #90EE90;
+}
+
+/* 경로 검색 버튼 스타일 */
+.search-submit {
+    width: 100%;
+    padding: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.search-submit:hover {
+    background-color: #45a049;
+}
+
+/* 인포윈도우 스타일 */
+.infowindow-container {
+    padding: 15px;
+    width: 350px;
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    border-radius: 8px;
+}
+
+.address-row {
+    margin-bottom: 8px;
+}
+
+.address-row:last-child {
+    margin-bottom: 0;
+}
+
+.address-label {
+    display: inline-block;
+    width: 80px;
+    color: #666;
+    font-weight: bold;
+}
+
+.address-content {
+    color: #333;
 }
