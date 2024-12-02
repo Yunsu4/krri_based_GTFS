@@ -4,23 +4,21 @@ import { fetchTrips } from "./api.js";
 let currentData = null;
 
 export function displayTripResults(data) {
-    currentData = data;
+    currentData = {
+        ...data,
+        present_time: data.present_time || document.querySelector('[name="present_time"]').value
+    };
     
     const sortButtons = document.querySelector('.sort-buttons');
     
     if (!data || !data.trips || data.trips.length === 0) {
-        // 검색 결과가 없으면 정렬 버튼 숨김
         sortButtons.style.display = 'none';
     } else {
-        // 검색 결과가 있으면 정렬 버튼 표시
         sortButtons.style.display = 'flex';
         
-        // 정렬 버튼 초기화 (처음 한 번만)
         if (!window.sortButtonsInitialized) {
             initSortButtons();
             window.sortButtonsInitialized = true;
-            
-            // 처음 검색 시에만 시간순 버튼 활성화
             document.querySelector('.sort-btn[data-sort="default"]').classList.add('active');
         }
     }
@@ -31,44 +29,51 @@ export function displayTripResults(data) {
 function initSortButtons() {
     document.querySelectorAll('.sort-btn').forEach(button => {
         button.addEventListener('click', async (e) => {
-            // 활성 버튼 스타일 변경
             document.querySelectorAll('.sort-btn').forEach(btn => 
                 btn.classList.remove('active'));
             e.target.classList.add('active');
             
-            // 로딩 표시 시작
             const loadingDiv = document.querySelector('.loading');
             const resultDiv = document.querySelector('.result');
             loadingDiv.style.display = 'block';
-            resultDiv.innerHTML = ''; // 기존 결과 초기화
+            resultDiv.innerHTML = '';
             
-            // 현재 폼 데이터 가져오기
-            const taxiFirst = document.querySelector('input[name="taxi_first"]:checked').value === 'true';
-            
-            const formData = {
-                departure_lat: parseFloat(document.querySelector('[name="departure_lat"]').value),
-                departure_lon: parseFloat(document.querySelector('[name="departure_lon"]').value),
-                arrival_lat: parseFloat(document.querySelector('[name="arrival_lat"]').value),
-                arrival_lon: parseFloat(document.querySelector('[name="arrival_lon"]').value),
-                present_time: document.querySelector('[name="present_time"]').value,
-                taxi_first: taxiFirst,
-                user_radius: taxiFirst ? 2 : 1,
-                arrival_radius: taxiFirst ? 1 : 2,
-                sort_type: e.target.dataset.sort
-            };
-
             try {
+                const taxiFirst = document.querySelector('[name="taxi_first"]').value === 'true';
+                
+                const formData = {
+                    departure_lat: currentData.user_coordinates.departure_lat,
+                    departure_lon: currentData.user_coordinates.departure_lon,
+                    arrival_lat: currentData.user_coordinates.arrival_lat,
+                    arrival_lon: currentData.user_coordinates.arrival_lon,
+                    present_time: document.querySelector('[name="present_time"]').value,
+                    taxi_first: taxiFirst,
+                    user_radius: taxiFirst ? 5 : 1,
+                    arrival_radius: taxiFirst ? 1 : 5,
+                    sort_type: e.target.dataset.sort
+                };
+
                 const data = await fetchTrips(formData);
                 displayTripResults(data);
             } catch (error) {
                 console.error('Error fetching sorted trips:', error);
                 displayTripResults({ trips: [] });
             } finally {
-                // 로딩 표시 종료
                 loadingDiv.style.display = 'none';
             }
         });
     });
+}
+
+
+function getInputValue(selector, defaultValue = null) {
+    const element = document.querySelector(selector);
+    return element ? element.value : defaultValue;
+}
+
+function getFloatValue(selector, defaultValue = 0) {
+    const value = getInputValue(selector);
+    return value ? parseFloat(value) : defaultValue;
 }
 
 function displaySortedTrips(data) {
@@ -89,7 +94,6 @@ function displaySortedTrips(data) {
         const tripCard = document.createElement('div');
         tripCard.className = 'trip-card';
         
-        // intermediate_stops가 있는지 확인하고 없으면 빈 배열 사용
         const intermediateStopsHtml = trip.intermediate_stops ? 
             trip.intermediate_stops.map(stop => `
                 <div>${trip.transport_type === '버스' ? '정류장' : '정차역'}: ${stop.stop_name}</div>
@@ -126,18 +130,14 @@ function displaySortedTrips(data) {
             </div>
         `;
 
-        // 카드 클릭 이벤트
         tripCard.addEventListener('click', () => {
-            // 모든 카드의 스타일 초기화
             document.querySelectorAll('.trip-card').forEach(card => {
                 card.style.backgroundColor = 'white';
             });
-            // 선택된 카드 하이라이트
             tripCard.style.backgroundColor = '#e8f5e9';
             
-            // 지도에 해당 경로만 표시
-            clearMarkers(); // 기존 마커와 선 제거
-            displayTripsOnMap({trips: [trip], user_coordinates: data.user_coordinates}); // 선택된 경로만 표시
+            clearMarkers();
+            displayTripsOnMap({trips: [trip], user_coordinates: data.user_coordinates});
         });
 
         resultDiv.appendChild(tripCard);
