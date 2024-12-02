@@ -46,7 +46,7 @@ function initSortButtons() {
                     departure_lon: currentData.user_coordinates.departure_lon,
                     arrival_lat: currentData.user_coordinates.arrival_lat,
                     arrival_lon: currentData.user_coordinates.arrival_lon,
-                    present_time: document.querySelector('[name="present_time"]').value,
+                    present_time: currentData.present_time,
                     taxi_first: taxiFirst,
                     user_radius: taxiFirst ? 5 : 1,
                     arrival_radius: taxiFirst ? 1 : 5,
@@ -63,17 +63,6 @@ function initSortButtons() {
             }
         });
     });
-}
-
-
-function getInputValue(selector, defaultValue = null) {
-    const element = document.querySelector(selector);
-    return element ? element.value : defaultValue;
-}
-
-function getFloatValue(selector, defaultValue = 0) {
-    const value = getInputValue(selector);
-    return value ? parseFloat(value) : defaultValue;
 }
 
 function displaySortedTrips(data) {
