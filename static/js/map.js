@@ -13,6 +13,10 @@ export function initMap() {
     map = new kakao.maps.Map(container, options);
 }
 
+export function getMap() {
+    return map;
+}
+
 
 export function setMapForUserLocation(lat, lon) {
     const container = document.getElementById('map');
@@ -36,25 +40,25 @@ export function clearMarkers() {
 export function displayTripsOnMap(data) {
     clearMarkers();
 
-    const heart_markerImage = new kakao.maps.MarkerImage(
-        'static/images/custom_heart_marker.png',
+    const departure_markerImage = new kakao.maps.MarkerImage(
+        'static/images/departure_marker.png',
+        new kakao.maps.Size(30, 40)
+    );
+
+    const arrival_markerImage = new kakao.maps.MarkerImage(
+        'static/images/arrival_marker.png',
         new kakao.maps.Size(30, 40)
     );
 
     const bus_markerImage = new kakao.maps.MarkerImage(
-        'static/images/custom_bus_marker.png',
+        'static/images/bus_marker.png',
         new kakao.maps.Size(30, 40)
     );
 
     const userCoords = data.user_coordinates;
 
     data.trips.forEach(trip => {
-        // 현위치 마커
-        createMarker(userCoords.departure_lat, userCoords.departure_lon, heart_markerImage, map);
-
-        // 목적지 마커
-        createMarker(userCoords.arrival_lat, userCoords.arrival_lon, heart_markerImage, map);
-
+        // 버스 정류장 마커들 먼저 생성
         // 출발 정류장 마커
         createMarker(
             trip.departure.stop_info.stop_lat, trip.departure.stop_info.stop_lon,
@@ -67,10 +71,19 @@ export function displayTripsOnMap(data) {
             bus_markerImage, map
         );
 
-        // 경유 정류장 마커
-        trip.intermediate_stops.forEach(stop => {
-            createMarker(stop.stop_lat, stop.stop_lon, bus_markerImage, map);
-        });
+        // 경유 정류장 마커 (있는 경우에만)
+        if (trip.intermediate_stops) {
+            trip.intermediate_stops.forEach(stop => {
+                createMarker(stop.stop_lat, stop.stop_lon, bus_markerImage, map);
+            });
+        }
+
+        // 출발지/도착지 마커를 마지막에 생성
+        // 현위치 마커
+        createMarker(userCoords.departure_lat, userCoords.departure_lon, departure_markerImage, map);
+
+        // 목적지 마커
+        createMarker(userCoords.arrival_lat, userCoords.arrival_lon, arrival_markerImage, map);
 
         // polyline 설정
 
@@ -88,10 +101,15 @@ export function displayTripsOnMap(data) {
         ];        
         createPolyline(endConnectionPath, '#FF0000', 'dashed');
 
+        // 버스/지하철 경로 연결선
         const linePath = [
             new kakao.maps.LatLng(trip.departure.stop_info.stop_lat, trip.departure.stop_info.stop_lon),
-            ...trip.intermediate_stops.map(stop => new kakao.maps.LatLng(stop.stop_lat, stop.stop_lon)),
-            new kakao.maps.LatLng(trip.arrival.stop_info.stop_lat, trip.arrival.stop_info.stop_lon),
+            // 중간 경유지가 있는 경우에만 추가
+            ...(trip.intermediate_stops ? 
+                trip.intermediate_stops.map(stop => 
+                    new kakao.maps.LatLng(stop.stop_lat, stop.stop_lon)
+                ) : []),
+            new kakao.maps.LatLng(trip.arrival.stop_info.stop_lat, trip.arrival.stop_info.stop_lon)
         ];
         createPolyline(linePath, '#75B8FA', 'solid');
 
@@ -103,9 +121,13 @@ export function displayTripsOnMap(data) {
         bounds.extend(new kakao.maps.LatLng(userCoords.arrival_lat, userCoords.arrival_lon));
         bounds.extend(new kakao.maps.LatLng(trip.departure.stop_info.stop_lat, trip.departure.stop_info.stop_lon));
         bounds.extend(new kakao.maps.LatLng(trip.arrival.stop_info.stop_lat, trip.arrival.stop_info.stop_lon));
-        trip.intermediate_stops.forEach(stop => {
-            bounds.extend(new kakao.maps.LatLng(stop.stop_lat, stop.stop_lon));
-        });
+        
+        // 중간 경유지가 있는 경우에만 추가
+        if (trip.intermediate_stops) {
+            trip.intermediate_stops.forEach(stop => {
+                bounds.extend(new kakao.maps.LatLng(stop.stop_lat, stop.stop_lon));
+            });
+        }
 
         // 지도 영역 설정
         map.setBounds(bounds);
