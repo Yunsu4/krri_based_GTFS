@@ -1,16 +1,6 @@
 import json
-import processData
-import pandas as pd
-
-def custom_round(number):
-    if isinstance(number, pd.Series):
-        number = number.iloc[0]
-    
-    if number - int(number) >= 0.5:
-        return int(number) + 1
-    else:
-        return int(number)
-    
+import model.processData as processData
+from util.utilFunctions import custom_round
 
 
 def convert_trip_info_to_json(processed_trips, print_count, journey_stops_by_trip, routes, taxi_first):
@@ -25,7 +15,7 @@ def convert_trip_info_to_json(processed_trips, print_count, journey_stops_by_tri
             "rank": count,
             "trip_id": trip_id,
             "transport_type": "버스" if str(trip_id).startswith('BR') else "지하철",
-            "route_name": processData.get_trip_name(trip_id, routes),
+            "route_name": processData.get_route_name(trip_id, routes),
             "taxi_first": "taxi_first" if taxi_first else "walking_first",
             
             "total_journey_time": custom_round(float(closest_departure_stop['total_journey_time'].iloc[0])) if 'total_journey_time' in closest_departure_stop else None,
