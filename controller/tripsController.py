@@ -1,10 +1,14 @@
-import processData
+import model.processData as processData
 import sort.taxiDistance
 import sort.walkingDistance
 import sort.totalJourneyTime
 import model.convertJson
 import model.loadData
 
+
+
+DEFAULT_STOP_COUNT = 100
+DEFAULT_STOP_COUNT_FOR_RESULT =10
 
 def sort_type_by_user_input(processed_trips, sort_type, stop_times, stops, routes, taxi_first):
     # 정렬 함수 딕셔너리
@@ -43,7 +47,7 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
 
 
     # 1. A지점 반경 1km내 정류장 중 가까운 거 100개
-    departure_stops = processData.find_closest_stops(stops, user_lat, user_lon, user_radius, 100,'departure_distance_km')
+    departure_stops = processData.find_closest_stops(stops, user_lat, user_lon, user_radius, DEFAULT_STOP_COUNT,'departure_distance_km')
 
     if not departure_stops.empty:
  
@@ -51,7 +55,7 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
         departure_buses = processData.filter_future_arrivals(stop_times, stops, departure_stops, present_time)
         
         # 3. 도착지 반경 2km내 버스 정류장 100개 탐색
-        arrival_stops = processData.find_closest_stops(stops, arrival_lat, arrival_lon, arrival_radius, 100,'arrival_distance_km')
+        arrival_stops = processData.find_closest_stops(stops, arrival_lat, arrival_lon, arrival_radius, DEFAULT_STOP_COUNT,'arrival_distance_km')
 
         # 4. 현재 시간 이후에 도착하는 버스 매칭
         arrival_buses = processData.filter_future_arrivals(stop_times, stops, arrival_stops, present_time)
@@ -60,6 +64,6 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
         sorted_full_trip_times = processData.find_matching_routes(departure_buses, arrival_buses, stops, present_time, taxi_first)
         
         # 9,10.정렬된 trip_times 중 n개만 출력을 위한 작업
-        processed_trips = processData.process_trips(sorted_full_trip_times, stops, 10, taxi_first)
+        processed_trips = processData.process_trips(sorted_full_trip_times, stops, DEFAULT_STOP_COUNT_FOR_RESULT, taxi_first)
 
         return sort_type_by_user_input(processed_trips, sort_type, stop_times, stops, routes, taxi_first)
