@@ -1,4 +1,4 @@
-import processData
+import model.processData as processData
 
 # 출력 로직
 def print_trip_info(processed_trips, sort_type, print_count, journey_stops_by_trip, routes):
