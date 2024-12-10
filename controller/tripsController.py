@@ -4,6 +4,7 @@ import sort.walkingDistance
 import sort.totalJourneyTime
 import model.convertJson
 import model.loadData
+import pandas as pd
 
 
 
@@ -11,9 +12,15 @@ DEFAULT_STOP_COUNT = 100
 DEFAULT_STOP_COUNT_FOR_RESULT =10
 
 def sort_type_by_user_input(processed_trips, sort_type, stop_times, stops, routes, taxi_first):
+
+    # stop_times, stops, routes만 DataFrame으로 변환
+    stop_times_df = pd.DataFrame(stop_times)
+    stops_df = pd.DataFrame(stops)
+    routes_df = pd.DataFrame(routes)
+
     # 정렬 함수 딕셔너리
     sort_functions = {
-        'default': lambda x, taxi_first: x,  # taxi_first 파라미터 추가
+        'default': lambda x, taxi_first: x,
         'total_journey_time': sort.totalJourneyTime.sort,
         'taxi_distance': sort.taxiDistance.sort,
         'walking_distance': sort.walkingDistance.sort
@@ -29,22 +36,25 @@ def sort_type_by_user_input(processed_trips, sort_type, stop_times, stops, route
 
     # 중복 제거
     final_sorted_trips = processData.remove_duplicate_trips(sorted_trips)
-    
+
     # 경로 정보 추가
-    journey_stops_by_trip = processData.get_course_of_journey(final_sorted_trips, stop_times, stops)
+    journey_stops_by_trip = processData.get_course_of_journey(final_sorted_trips, stop_times_df, stops_df)
     
-    # JSON 변환
-    return model.convertJson.convert_trip_info_to_json(final_sorted_trips, 5, journey_stops_by_trip, routes, taxi_first)
+    # Json 변환
+    json_result = model.convertJson.convert_trip_info_to_json(
+        final_sorted_trips, 5, journey_stops_by_trip, routes_df, taxi_first
+    )
+    
+    return {
+        'result': json_result
+    }
 
 
 
 
-
-
-def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, user_radius, arrival_radius, sort_type, taxi_first):
-    stops, routes = model.loadData.load_data()
+def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, user_radius, arrival_radius, taxi_first):
+    stops = model.loadData.load_data()
     stop_times = model.loadData.load_stop_times(present_time)
-
 
     # 1. A지점 반경 1km내 정류장 중 가까운 거 100개
     departure_stops = processData.find_closest_stops(stops, user_lat, user_lon, user_radius, DEFAULT_STOP_COUNT,'departure_distance_km')
@@ -66,4 +76,17 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
         # 9,10.정렬된 trip_times 중 n개만 출력을 위한 작업
         processed_trips = processData.process_trips(sorted_full_trip_times, stops, DEFAULT_STOP_COUNT_FOR_RESULT, taxi_first)
 
-        return sort_type_by_user_input(processed_trips, sort_type, stop_times, stops, routes, taxi_first)
+        return {
+            'processed_trips': processed_trips,
+        }
+    
+
+def load_data_for_sort(present_time):
+    stops, routes = model.loadData.load_data()
+    stop_times = model.loadData.load_stop_times(present_time)
+
+    return {
+            'stop_times': stop_times,
+            'stops': stops,
+            'routes': routes,
+        }
