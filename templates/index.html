@@ -1,16 +1,9 @@
+<!DOCTYPE html>
+<html>
 <head>
     <title>Trip Search</title>
     <meta charset="utf-8"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <!-- Kakao Maps API -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0883d65639dc6ec90128d88233f7682f&libraries=services"></script>
-    <!-- 검색 기능 -->
-    <script type="module" src="{{ url_for('static', filename='js/search.js') }}"></script>
-    <!-- 기존 스크립트들 -->
-    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/map.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/ui.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/api.js') }}"></script>
 </head>
 <body>
     <div class="sidebar">
@@ -61,4 +54,13 @@
     <div class="map-container">
         <div id="map"></div>
     </div>
+
+    <!-- JavaScript는 body 끝에 배치 -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=MY_APP_KEY&libraries=services"></script>
+    <script type="module" src="{{ url_for('static', filename='js/search.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/map.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/api.js') }}"></script>
 </body>
+</html>
