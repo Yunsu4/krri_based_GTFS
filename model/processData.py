@@ -13,11 +13,8 @@ def find_closest_stops(stops, user_lat, user_lon, user_radius, stop_count, dista
     
     within_radius = stops[stops[distance_col] <= user_radius]
     
-    print(f"반경 내 정류장 수: {len(within_radius)}")
-    
     if not within_radius.empty:
         result = within_radius.nsmallest(stop_count, distance_col)
-        print(f"반환된 정류장 수: {len(result)}\n")
         return result
     return pd.DataFrame()
 
@@ -35,7 +32,9 @@ def haversine(lat1, lon1, lat2, lon2):
 def filter_future_arrivals(stop_times, stops, closest_stops, present_time):
     filtered_stop_times = stop_times[stop_times['stop_id'].isin(closest_stops['stop_id'])]
     future_departures = filtered_stop_times[filtered_stop_times['arrival_time'] > present_time]
-    return future_departures.merge(stops[['stop_id', 'stop_name']], on='stop_id', how='left')
+    
+    # closest_stops의 모든 정보를 포함하여 merge
+    return future_departures.merge(closest_stops, on='stop_id', how='left')
 
 
 
@@ -90,14 +89,11 @@ def sort_trips(trip_times, stops, present_time, taxi_first):
         closest_departure_stop_id = closest_departure_stop['stop_id'].iloc[0]
         closest_departure_times = departure_rows[departure_rows['stop_id'] == closest_departure_stop_id][['departure_time', 'arrival_time', 'stop_sequence']]
         
-        closest_departure_stop = closest_departure_stop.assign(
-            departure_time=closest_departure_times['departure_time'].iloc[0],
-            arrival_time=closest_departure_times['arrival_time'].iloc[0],
-            stop_sequence=closest_departure_times['stop_sequence'].iloc[0]
-        )
+        # 원본 departure_rows에서 해당 정류장의 모든 정보를 가져오기
+        closest_departure_info = departure_rows[departure_rows['stop_id'] == closest_departure_stop_id].copy()
         
         # 도보 시간을 고려한 유효한 출발 정류장 찾기
-        valid_departure_stops = find_matching_departure_stops(closest_departure_stop, present_time, taxi_first)
+        valid_departure_stops = find_matching_departure_stops(closest_departure_info, present_time, taxi_first)
         
         if valid_departure_stops.empty:
             continue
@@ -109,11 +105,12 @@ def sort_trips(trip_times, stops, present_time, taxi_first):
     # departure_time으로 정렬
     for_sort_trip_times.sort(key=lambda x: x[0])
     
-    return [(trip_id, closest_departure_stop) for _, trip_id, closest_departure_stop in for_sort_trip_times]
+    # 원본 departure_rows의 모든 컬럼을 포함하여 반환
+    return [(trip_id, departure_stops) for _, trip_id, departure_stops in for_sort_trip_times]
 
 
         
-"""7. 도보 시간을 고려한 유효한 출발 정류장 찾기"""
+"""7. 도보 시간을 고려한 유효한 발 정류장 찾기"""
 def find_matching_departure_stops(departure_rows, present_time, taxi_first):
 
     # 거리 계산에 사용할 컬럼 선택
@@ -150,32 +147,58 @@ def get_valid_trips_with_sort(trip_id, departure_rows, arrival_buses):
     도착 정류장 정보 추가, 10.도착 정류장까지 걸어가는 시간 계산"""
 def process_trips(trip_times, stops, trip_count, taxi_first):
     processed_trips = []
+    
     for trip_id, departure_rows, arrival_rows in trip_times[:trip_count]:
         processed_trip = process_single_trip(trip_id, departure_rows, arrival_rows, stops, taxi_first)
         if processed_trip:
             processed_trips.append(processed_trip)
+    
     return processed_trips
 
 def process_single_trip(trip_id, departure_rows, arrival_rows, stops, taxi_first):
+    closest_departure_stop = departure_rows.copy()
+    if closest_departure_stop is None:
+        return None
+
+    closest_departure_stop = closest_departure_stop.merge(
+        stops[['stop_id', 'stop_lat', 'stop_lon']], 
+        on='stop_id', 
+        how='left',
+        suffixes=('', '_new')
+    )
+
     closest_arrival_stop = get_nearest_arrival_stop(arrival_rows, stops)
     if closest_arrival_stop is None:
         return None
 
+    closest_departure_stop = update_stop_with_time_info(closest_departure_stop, departure_rows)
     closest_arrival_stop = update_stop_with_time_info(closest_arrival_stop, arrival_rows)
-    closest_departure_stop, closest_arrival_stop = calculate_time_to_stop(departure_rows, closest_arrival_stop, taxi_first)
+
+    departure_dict, arrival_dict = calculate_time_to_stop(closest_departure_stop, closest_arrival_stop, taxi_first)
     
-    return (trip_id, closest_departure_stop, closest_arrival_stop)
+    return {
+        'trip_id': trip_id,
+        'departure': departure_dict,
+        'arrival': arrival_dict
+    }
 
 '''출발지와 정류장, 도착지와 정류장 간의 소요 시간을 계산하는 함수(택시 이용 순서 기준)'''
 def calculate_time_to_stop(closest_departure_stop, closest_arrival_stop, taxi_first):
+    # DataFrame 복사본 생성
+    departure_stop = closest_departure_stop.copy()
+    arrival_stop = closest_arrival_stop.copy()
+    
     if taxi_first:
-        closest_departure_stop.loc[:, 'time_to_stop'] = custom_round_for_taxi(closest_departure_stop['departure_distance_km'])
-        closest_arrival_stop.loc[:, 'time_to_stop'] = custom_round(closest_arrival_stop['arrival_distance_km'] * 15)
+        departure_stop['time_to_stop'] = custom_round_for_taxi(departure_stop['departure_distance_km'])
+        arrival_stop['time_to_stop'] = custom_round(arrival_stop['arrival_distance_km'] * 15)
     else:
-        closest_departure_stop.loc[:, 'time_to_stop'] = custom_round(closest_departure_stop['departure_distance_km'] * 15)
-        closest_arrival_stop.loc[:, 'time_to_stop'] = custom_round_for_taxi(closest_arrival_stop['arrival_distance_km'])
+        departure_stop['time_to_stop'] = custom_round(departure_stop['departure_distance_km'] * 15)
+        arrival_stop['time_to_stop'] = custom_round_for_taxi(arrival_stop['arrival_distance_km'])
 
-    return (closest_departure_stop, closest_arrival_stop)
+    departure_dict = departure_stop.to_dict('records')[0]
+    arrival_dict = arrival_stop.to_dict('records')[0]
+
+    return (departure_dict, arrival_dict)
 
 def custom_round_for_taxi(number):    
     if isinstance(number, pd.Series):
@@ -209,21 +232,22 @@ def remove_duplicate_trips(processed_trips):
     unique_trips = []
     seen_routes = set()
     
-    for current_trip in processed_trips:  # 정렬된 순서 그대로 순회
-        departure = current_trip[1]
-        arrival = current_trip[2]
+    for current_trip in processed_trips:
+        # 현재 구조는 딕셔너리 형태이므로 직접 접근
+        departure = current_trip['departure']
+        arrival = current_trip['arrival']
         
-        # 출발지-도착지 쌍을 키로 사용
+        # 출발지-도착지 쌍을 로 사용
         route_key = (
-            departure['stop_id'].iloc[0],
-            arrival['stop_id'].iloc[0]
+            departure['stop_id'],
+            arrival['stop_id']
         )
         
         if route_key not in seen_routes:
             seen_routes.add(route_key)
             unique_trips.append(current_trip)
             
-    return unique_trips  # 정렬된 순서 유지
+    return unique_trips
 
 
 
@@ -231,16 +255,20 @@ def remove_duplicate_trips(processed_trips):
 def get_course_of_journey(processed_trips, stop_times, stops):
     journey_stops_by_trip = {}
     
-    for trip_id, closest_departure_stop, closest_arrival_stop in processed_trips:
+    for trip_info in processed_trips:
+        trip_id = trip_info['trip_id']
+        departure_sequence = trip_info['departure']['stop_sequence']
+        arrival_sequence = trip_info['arrival']['stop_sequence']
+        
         journey_stops = find_intermediate_stops(
-            trip_id, 
-            closest_departure_stop['stop_sequence'].iloc[0],
-            closest_arrival_stop['stop_sequence'].iloc[0],
-            stop_times,
-            stops
+            trip_id, departure_sequence, arrival_sequence,
+            stop_times, stops
         )
         if journey_stops:
-            journey_stops_by_trip[trip_id] = journey_stops
+            # DataFrame을 딕셔너리 리스트로 변환
+            journey_stops_by_trip[trip_id] = [
+                stop.to_dict('records')[0] for stop in journey_stops
+            ]
             
     return journey_stops_by_trip
 

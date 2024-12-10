@@ -6,12 +6,12 @@ def sort(processed_trips, taxi_first):
 
     if taxi_first:
         return sorted(trips_copy,
-                  key=lambda x: (x[2]['time_to_stop'].iloc[0], 
-                                  convert_time_to_minutes(x[1]['arrival_time'].iloc[0])))
+                  key=lambda x: (x['arrival']['time_to_stop'], 
+                                  convert_time_to_minutes(x['departure']['arrival_time'])))
     else:
         return sorted(trips_copy,
-                  key=lambda x: (x[1]['time_to_stop'].iloc[0], 
-                                  convert_time_to_minutes(x[1]['arrival_time'].iloc[0])))
+                  key=lambda x: (x['departure']['time_to_stop'], 
+                                  convert_time_to_minutes(x['departure']['arrival_time'])))
 
 
 
