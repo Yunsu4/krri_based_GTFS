@@ -11,6 +11,14 @@ from math import isclose
 
 app = Flask(__name__)
 
+
+def load_config():
+    with open('config.json') as config_file:
+        return json.load(config_file)
+    
+config = load_config()
+
+
 # 세션 설정
 app.secret_key = 'your_secret_key'
 
@@ -25,7 +33,7 @@ Session(app)
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index.html', kakao_app_key=config['kakao_app_key'])
 
 @app.route('/api/trips', methods=['GET', 'POST'])
 def index():
@@ -146,7 +154,7 @@ def index():
 
         return jsonify(response_data)
 
-    return render_template('index.html')
+    return render_template('index.html', kakao_app_key=config['kakao_app_key'])
 
 
 

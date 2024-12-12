@@ -54,7 +54,7 @@ def sort_type_by_user_input(processed_trips, sort_type, stop_times, stops, route
 
 
 def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, user_radius, arrival_radius, taxi_first):
-    stops = model.loadData.load_data()
+    stops = model.loadData.load_stops_data()
     stop_times = model.loadData.load_stop_times(present_time)
 
     # 1. A지점 반경 1km내 정류장 중 가까운 거 100개
@@ -69,7 +69,7 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
         arrival_stops = processData.find_closest_stops(stops, arrival_lat, arrival_lon, arrival_radius, DEFAULT_STOP_COUNT,'arrival_distance_km')
 
         # 4. 현재 시간 이후에 도착하는 버스 매칭
-        arrival_buses = processData.filter_future_arrivals(stop_times, stops, arrival_stops, present_time)
+        arrival_buses = processData.filter_future_arrivals(stop_times, arrival_stops, present_time)
 
         # 5(6,7,8). 출발지와 도착지를 연결하는 버스 노선 찾기
         sorted_full_trip_times = processData.find_matching_routes(departure_buses, arrival_buses, stops, present_time, taxi_first)
@@ -83,7 +83,8 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
     
 
 def load_data_for_sort(present_time):
-    stops, routes = model.loadData.load_data()
+    stops = model.loadData.load_stops_data()
+    routes = model.loadData.load_routes()
     stop_times = model.loadData.load_stop_times(present_time)
 
     return {
