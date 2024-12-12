@@ -3,17 +3,13 @@ import pandas as pd
 # 전역 변수 설정
 stops_file_path = "resources/stops.txt"
 
-
+"""데이터 파일들을 로드하는 함수"""
 def load_routes():
     routes_path = "resources/routes.csv"
     return pd.read_csv(routes_path)
 
-
-"""데이터 파일들을 로드하는 함수"""
-def load_data():
-    stops = pd.read_csv(stops_file_path)
-    routes = load_routes()
-    return stops, routes
+def load_stops():
+    return pd.read_csv(stops_file_path)
 
 
 def load_stop_times(user_time):
