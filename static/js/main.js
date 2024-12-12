@@ -95,33 +95,6 @@ function initForm() {
         });
     });
 
-    // 정렬 기준 변경 이벤트 리스너 추가
-    /*
-    document.querySelectorAll('.sort-btn').forEach(button => {
-        button.addEventListener('click', async (e) => {
-            if (!hasSearchedOnce) return;
-            
-            loadingDiv.style.display = 'block';
-            resultDiv.innerHTML = '';
-            
-            const formData = {
-                sort_type: e.target.dataset.sort,
-                taxi_first: document.querySelector('[name="taxi_first"]').value === 'true'
-            };
-
-            try {
-                const data = await fetchTrips(formData);
-                displayTripResults(data);
-            } catch (error) {
-                console.error('Error sorting trips:', error);
-                displayTripResults({ trips: [] });
-            } finally {
-                loadingDiv.style.display = 'none';
-            }
-        });
-    });
-    */
-
     document.querySelectorAll('.sort-btn').forEach(button => {
         button.addEventListener('click', async (e) => {
             if(!hasSearchedOnce || !lastFormData) {
