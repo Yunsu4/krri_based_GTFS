@@ -85,7 +85,7 @@ function displaySortedTrips(data) {
         
         const intermediateStopsHtml = trip.intermediate_stops ? 
             trip.intermediate_stops.map(stop => `
-                <div>${trip.transport_type === '버스' ? '정류장' : '정차역'}: ${stop.stop_name}</div>
+                <div>'정류장': ${stop.stop_name}</div>
             `).join('') : '';
         
         tripCard.innerHTML = `
@@ -98,7 +98,7 @@ function displaySortedTrips(data) {
                 </div>
 
                 <div class="stop-info">
-                    <div class="bus-info">${trip.transport_type} ${trip.route_name}</div>
+                    <div class="bus-info">버스 ${trip.route_name}</div>
                     ${intermediateStopsHtml}
                 </div>
 
