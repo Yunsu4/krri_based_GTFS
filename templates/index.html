@@ -56,7 +56,7 @@
     </div>
 
     <!-- JavaScript는 body 끝에 배치 -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=MY_APP_KEY&libraries=services"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_app_key }}&libraries=services"></script>
     <script type="module" src="{{ url_for('static', filename='js/search.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/map.js') }}"></script>
