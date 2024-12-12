@@ -300,8 +300,8 @@ def find_stop_info_by_sequence(trip_id, sequence, stop_times, stops):
 ''' 13. 노선 이름 조회'''
 def get_route_name(trip_id, routes):
     try:
-        # '_Ord' 이전까지의 문자열을 route_id로 사용
-        route_id = trip_id.split('_Ord')[0]  # BR_3100_200000049
+        # 'TRIP_' 제거, '_EVERYDAY_Ord004' 제거 후 route_id 추출
+        route_id = "ROUTE" + trip_id.replace('TRIP','').split('_EVERYDAY_Ord')[0]  # ROUTE_B7050
         matching_routes = routes[routes['route_id'] == route_id]
         
         if matching_routes.empty:
