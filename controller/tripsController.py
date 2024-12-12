@@ -1,10 +1,11 @@
+import pandas as pd
+
 import model.processData as processData
 import sort.taxiDistance
 import sort.walkingDistance
 import sort.totalJourneyTime
 import model.convertJson
 import model.loadData
-import pandas as pd
 
 
 
@@ -62,7 +63,7 @@ def process_trips(user_lat, user_lon, arrival_lat, arrival_lon, present_time, us
     if not departure_stops.empty:
  
         # 2. 현재 시간 이후 도착하는 버스 매칭
-        departure_buses = processData.filter_future_arrivals(stop_times, stops, departure_stops, present_time)
+        departure_buses = processData.filter_future_arrivals(stop_times, departure_stops, present_time)
         
         # 3. 도착지 반경 2km내 버스 정류장 100개 탐색
         arrival_stops = processData.find_closest_stops(stops, arrival_lat, arrival_lon, arrival_radius, DEFAULT_STOP_COUNT,'arrival_distance_km')

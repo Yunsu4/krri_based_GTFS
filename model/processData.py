@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
+
 from util.utilFunctions import custom_round
+
+
 
 WALKING_SPEED_KM_PER_HOUR = 4  # 시간당 4km 걷는다고 가정
 
@@ -28,8 +31,9 @@ def haversine(lat1, lon1, lat2, lon2):
     return R*c
 
 
+
 """2, 4. 현재 시간 이후 도착 예정 버스를 필터링하는 함수"""
-def filter_future_arrivals(stop_times, stops, closest_stops, present_time):
+def filter_future_arrivals(stop_times, closest_stops, present_time):
     filtered_stop_times = stop_times[stop_times['stop_id'].isin(closest_stops['stop_id'])]
     future_departures = filtered_stop_times[filtered_stop_times['arrival_time'] > present_time]
     
@@ -85,9 +89,7 @@ def sort_trips(trip_times, stops, present_time, taxi_first):
         
         # 먼저 가장 가까운 정류장 찾기
         closest_departure_stop = departure_stops_info.nsmallest(1, 'departure_distance_km')
-        
         closest_departure_stop_id = closest_departure_stop['stop_id'].iloc[0]
-        closest_departure_times = departure_rows[departure_rows['stop_id'] == closest_departure_stop_id][['departure_time', 'arrival_time', 'stop_sequence']]
         
         # 원본 departure_rows에서 해당 정류장의 모든 정보를 가져오기
         closest_departure_info = departure_rows[departure_rows['stop_id'] == closest_departure_stop_id].copy()
@@ -307,6 +309,6 @@ def get_route_name(trip_id, routes):
             
         return matching_routes['route_short_name'].iloc[0]
         
-    except Exception as e:
+    except Exception :
         return f"노선 정보 조회 실패 (Trip ID: {trip_id})"
 
