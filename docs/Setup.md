@@ -43,7 +43,7 @@ config.json 예시
 
 📍 raw_data라는 폴더를 만들고, `stop_times.txt` `routes.txt` 파일을 넣습니다. 
 
-그리고 `resources` 폴더와 그 안에 `stop_times` 폴더를 만들고, `util/sliceStopTimesByHour.py`를 실행합니다. 실행 결과로 `stop_times.txt` 파일을 1시간 단위로 잘라 csv 파일로 만든 파일들이 생성됩니다.
+그리고 `resources` 폴더와 그 안에 `stop_times` 폴더를 만들고, `util/sliceFile.py`를 실행합니다. 실행 결과로 `stop_times.txt` 파일을 1시간 단위로 잘라 csv 파일로 만든 파일들이 생성됩니다.
 
 그리고 `util/removeUnnecessaryField.py` 를 실행하여 routes.txt 에서 agency_id 필드를 삭제하고, csv 파일로 만들어 사용합니다.
 
